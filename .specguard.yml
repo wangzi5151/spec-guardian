@@ -1,0 +1,24 @@
+# Spec-Guardian config used for its own repository self-scan.
+version: 1
+
+settings:
+  offline: false
+  fail_on: high
+  exclude:
+    - spec-guardian          # local build output
+    - dist/**
+    - _dist/**
+    - _demo/**
+    - examples/bad-repo/**   # intentionally unhealthy fixture
+  link_check:
+    enabled: true
+    concurrency: 8
+    timeout_seconds: 10
+
+# The bad-repo fixture intentionally commits secrets; silence its security
+# findings when scanning the whole project so our own CI stays green.
+rules:
+  security.dangerous_files:
+    enabled: true
+  security.secret_assignments:
+    enabled: true

@@ -1,0 +1,7 @@
+# CODEOWNERS
+# Replace @wangzi5151 with the real maintainer(s) before publishing.
+*                       @wangzi5151
+
+/internal/rules/        @wangzi5151
+/internal/reporter/     @wangzi5151
+/action.yml             @wangzi5151

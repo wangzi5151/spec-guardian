@@ -1,0 +1,93 @@
+# Spec-Guardian rule configuration — copy to specguard-rules.yml and edit.
+#
+# Every built-in rule is enabled by default. Use this file to:
+#   - disable rules,
+#   - change their severity,
+#   - exclude paths,
+#   - add custom regex/path rules.
+#
+# Run `spec-guardian rules` to list all rule IDs.
+
+version: 1
+
+settings:
+  # Never touch the network (link liveness + release/checksum checks).
+  offline: false
+
+  # Exit non-zero from this severity up: high | medium | low | none.
+  fail_on: high
+
+  # Never read files larger than this into memory during checks.
+  max_file_size_kb: 1024
+
+  # Paths skipped entirely (glob patterns; ** and * supported).
+  exclude:
+    - vendor/**
+    - node_modules/**
+    - third_party/**
+    - .git/**
+
+  # Optional, informational: flag source files missing a copyright/SPDX header.
+  header_comment_check: false
+
+  link_check:
+    enabled: true
+    # Global concurrency cap for link probing.
+    concurrency: 8
+    timeout_seconds: 10
+    # Only check these hosts (empty == all).
+    allowlist: []
+    # Never check these hosts.
+    denylist: []
+
+# Per-rule overrides. Uncomment and edit.
+rules:
+  # repo.readme.limitations:
+  #   severity: info
+  # security.large_files:
+  #   enabled: false
+  # community.codeowners:
+  #   enabled: false
+
+# Shorthand alternatives to the `rules:` block above.
+severity_overrides:
+  docs.links.dead: medium
+  # repo.readme.limitations: info
+
+disabled_rules:
+  # - community.codeowners
+  # - security.large_files
+
+# Custom rules extend the engine without recompiling the binary. This is the
+# foundation of the future rule marketplace: publish a YAML file, reuse it
+# everywhere with --rules.
+custom_rules:
+  # - id: custom.no_todo_in_docs
+  #   severity: low
+  #   description: No TODO markers in documentation
+  #   message: Found a TODO marker in docs
+  #   remediation: Resolve the TODO or convert it to a tracked issue.
+  #   type: regex            # regex | path
+  #   pattern: "TODO"
+  #   files: ["**/*.md"]     # empty == all files
+  #   exclude: ["docs/archive/**"]
+  #
+  # - id: custom.no_checkout_v2
+  #   severity: medium
+  #   description: Use actions/checkout@v4
+  #   message: A workflow still pins actions/checkout@v2
+  #   type: regex
+  #   pattern: "actions/checkout@v2"
+  #   files: [".github/workflows/**"]
+  #
+  # # Restrict a rule to specific project types. Built-in variables exposed to
+  # # rules: root path, git branch and detected project type
+  # # (go | node | python | rust | any).
+  # - id: custom.go_no_vendor_imports
+  #   severity: low
+  #   description: Go projects should not import vendor paths
+  #   message: Found a vendor import
+  #   type: regex
+  #   pattern: "example.com/vendor/"
+  #   projects: [go]
+  #   files: ["**/*.go"]

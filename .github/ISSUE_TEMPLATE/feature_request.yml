@@ -1,0 +1,27 @@
+name: Feature request
+description: Suggest a new rule, report format or capability
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What repository-health problem are you trying to catch?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: >-
+        For a new rule, describe the ID, default severity, how to detect it, and
+        how users could fix it. Remember: metadata only, never source logic.
+    validations:
+      required: true
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope check
+      options:
+        - label: This does not involve scanning source code logic or vulnerabilities.
+          required: true

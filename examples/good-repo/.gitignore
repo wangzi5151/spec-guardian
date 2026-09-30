@@ -1,0 +1,19 @@
+# Build output
+/example-bin
+*.exe
+
+# Environment and keys
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.pfx
+
+# Dependencies / artifacts
+node_modules/
+dist/
+*.log
+
+# OS
+.DS_Store

@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: test (${{ matrix.os }}, go ${{ matrix.go }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        go: ["1.22", "1.23"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go }}
+
+      - name: Verify formatting
+        if: runner.os == 'Linux'
+        run: |
+          fmt_out="$(gofmt -l .)"
+          if [ -n "$fmt_out" ]; then
+            echo "These files are not gofmt-clean:"; echo "$fmt_out"; exit 1
+          fi
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Build
+        run: go build ./...
+
+      - name: Test
+        run: go test ./... -race -count=1
+
+      - name: Self-scan (offline)
+        if: runner.os == 'Linux'
+        run: |
+          go build -o spec-guardian ./cmd/spec-guardian
+          ./spec-guardian scan . --offline --format all --out-dir ./self-report --no-color || true
+          cat ./self-report/specguard-report.txt || true
+
+      - name: Upload self report
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: self-report
+          path: self-report/specguard-report.html
+          if-no-files-found: ignore

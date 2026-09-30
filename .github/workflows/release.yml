@@ -1,0 +1,49 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+
+      - name: Build cross-platform binaries
+        env:
+          VERSION: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          targets="linux/amd64 linux/arm64 linux/386 windows/amd64 windows/386 darwin/amd64 darwin/arm64"
+          for t in $targets; do
+            GOOS="${t%%/*}"; GOARCH="${t##*/}"
+            ext=""; [ "$GOOS" = "windows" ] && ext=".exe"
+            out="dist/spec-guardian_${GOOS}_${GOARCH}${ext}"
+            echo "building $out"
+            CGO_ENABLED=0 GOOS="$GOOS" GOARCH="$GOARCH" \
+              go build -trimpath -ldflags "-s -w -X main.version=$VERSION" \
+              -o "$out" ./cmd/spec-guardian
+          done
+
+      - name: Generate checksums
+        working-directory: dist
+        run: sha256sum spec-guardian_* > SHA256SUMS
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/spec-guardian_*
+            dist/SHA256SUMS
+          generate_release_notes: true

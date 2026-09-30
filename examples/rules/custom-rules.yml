@@ -1,0 +1,34 @@
+# Custom rule set for Spec-Guardian.
+#
+# Apply with:
+#   spec-guardian scan examples/bad-repo --offline --rules examples/rules/custom-rules.yml
+
+version: 1
+
+settings:
+  offline: true
+  link_check:
+    enabled: false
+
+# Downgrade the license check for demonstration.
+severity_overrides:
+  repo.license.exists: medium
+
+custom_rules:
+  - id: custom.no_todo
+    severity: medium
+    description: Source and docs must not contain TODO markers
+    message: Found a TODO marker
+    remediation: Resolve the TODO or convert it to a tracked issue.
+    doc_url: https://github.com/wangzi5151/spec-guardian/blob/main/docs/rules.md
+    type: regex
+    pattern: "TODO"
+    files: ["**/*.go", "**/*.md"]
+
+  - id: custom.no_committed_env
+    severity: high
+    description: .env files must never be committed
+    message: An .env file is present in the repository
+    remediation: Remove it, add .env to .gitignore, and rotate the secrets.
+    type: path
+    pattern: "**/.env"

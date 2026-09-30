@@ -1,0 +1,149 @@
+name: Spec-Guardian
+description: >-
+  Open-source repository health auditor. Audits metadata, documentation,
+  build reproducibility and release hygiene. Not a code linter.
+author: wangzi5151
+
+branding:
+  icon: shield
+  color: purple
+
+inputs:
+  path:
+    description: Path (relative to the workspace) of the repository to scan.
+    required: false
+    default: "."
+  rules:
+    description: Path to a specguard-rules.yml configuration file (optional).
+    required: false
+    default: ""
+  fail-on:
+    description: "Exit non-zero from this severity up: high | medium | low | none."
+    required: false
+    default: "high"
+  format:
+    description: "Report formats to emit: text | json | html | all."
+    required: false
+    default: "all"
+  out-dir:
+    description: Directory where reports are written.
+    required: false
+    default: "specguard-report"
+  version:
+    description: Spec-Guardian version to download (e.g. v0.1.0) or "latest".
+    required: false
+    default: "latest"
+  install:
+    description: "How to obtain the tool: auto | binary | source."
+    required: false
+    default: "auto"
+  upload-artifact:
+    description: Upload the HTML report as a workflow artifact.
+    required: false
+    default: "true"
+  args:
+    description: Additional raw arguments appended to the scan command.
+    required: false
+    default: ""
+
+outputs:
+  exit-code:
+    description: The exit code produced by the scan.
+    value: ${{ steps.scan.outputs.exit-code }}
+  report-html:
+    description: Path to the generated HTML report.
+    value: ${{ steps.scan.outputs.report-html }}
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Go (for source install / fallback)
+      if: ${{ inputs.install != 'binary' }}
+      uses: actions/setup-go@v5
+      with:
+        go-version: "1.22"
+
+    - name: Resolve Spec-Guardian binary
+      id: setup
+      shell: bash
+      env:
+        INPUT_INSTALL: ${{ inputs.install }}
+        INPUT_VERSION: ${{ inputs.version }}
+      run: |
+        set -euo pipefail
+        bin=""
+        if [ "$INPUT_INSTALL" != "source" ]; then
+          os="$(uname -s | tr '[:upper:]' '[:lower:]')"
+          arch="$(uname -m)"
+          case "$arch" in
+            x86_64|amd64) arch="amd64" ;;
+            aarch64|arm64) arch="arm64" ;;
+            i386|i686) arch="386" ;;
+          esac
+          ext=""
+          [ "$os" = "windows" ] && ext=".exe"
+          ver="$INPUT_VERSION"
+          if [ "$ver" = "latest" ]; then
+            base="https://github.com/wangzi5151/spec-guardian/releases/latest/download"
+          else
+            base="https://github.com/wangzi5151/spec-guardian/releases/download/$ver"
+          fi
+          url="$base/spec-guardian_${os}_${arch}${ext}"
+          target="$RUNNER_TEMP/spec-guardian${ext}"
+          echo "Attempting to download $url"
+          if curl -fsSL "$url" -o "$target"; then
+            chmod +x "$target" || true
+            bin="$target"
+          fi
+        fi
+        if [ -z "$bin" ] && [ "$INPUT_INSTALL" != "binary" ]; then
+          ver_suffix="latest"
+          [ "$INPUT_VERSION" != "latest" ] && ver_suffix="$INPUT_VERSION"
+          go install "github.com/wangzi5151/spec-guardian/cmd/spec-guardian@${ver_suffix}"
+          bin="$(go env GOPATH)/bin/spec-guardian"
+        fi
+        if [ -z "$bin" ] || [ ! -x "$bin" ]; then
+          echo "::error::Unable to obtain the Spec-Guardian binary."
+          exit 1
+        fi
+        echo "bin=$bin" >> "$GITHUB_OUTPUT"
+        "$bin" version || true
+
+    - name: Run Spec-Guardian
+      id: scan
+      shell: bash
+      env:
+        BIN: ${{ steps.setup.outputs.bin }}
+        SCAN_PATH: ${{ inputs.path }}
+        RULES: ${{ inputs.rules }}
+        FAIL_ON: ${{ inputs.fail-on }}
+        FORMAT: ${{ inputs.format }}
+        OUT_DIR: ${{ inputs.out-dir }}
+        EXTRA_ARGS: ${{ inputs.args }}
+      run: |
+        set -euo pipefail
+        args=(scan "$SCAN_PATH" --format "$FORMAT" --out-dir "$OUT_DIR" --fail-on "$FAIL_ON" --no-color)
+        if [ -n "$RULES" ]; then args+=(--rules "$RULES"); fi
+        args+=(--summary "$GITHUB_STEP_SUMMARY")
+        if [ -n "$EXTRA_ARGS" ]; then
+          # shellcheck disable=SC2206
+          args+=($EXTRA_ARGS)
+        fi
+        echo "Running: $BIN ${args[*]}"
+        set +e
+        "$BIN" "${args[@]}"
+        code=$?
+        set -e
+        echo "exit-code=$code" >> "$GITHUB_OUTPUT"
+        echo "report-html=$OUT_DIR/specguard-report.html" >> "$GITHUB_OUTPUT"
+        echo "Spec-Guardian exit code: $code"
+        exit $code
+
+    - name: Upload HTML report
+      if: ${{ always() && inputs.upload-artifact == 'true' }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: spec-guardian-report
+        path: ${{ inputs.out-dir }}/specguard-report.html
+        if-no-files-found: warn
+        retention-days: 14
