@@ -26,7 +26,7 @@ curl -fsSL https://raw.githubusercontent.com/wangzi5151/spec-guardian/main/insta
 # Windows
 winget install wangzi5151.spec-guardian
 
-# From source (Go >= 1.22)
+# From source (Go >= 1.22; 1.23+ on macOS)
 go install github.com/wangzi5151/spec-guardian/cmd/spec-guardian@latest
 ```
 
