@@ -223,6 +223,9 @@ No. The released binaries are static, dependency-free single files.
   to `github.com` and `api.github.com`; air-gapped environments should use
   `--offline` and a local path.
 - 32-bit (`386`) binaries are best-effort optional targets.
+- On macOS arm64, **Go 1.23+ is required** to build or test: Go 1.22's linker
+  omits the `LC_UUID` load command and dyld aborts with `signal: abort trap`
+  (an upstream bug fixed in Go 1.23). Linux and Windows work with Go 1.22.
 
 **Project status (v0.1, pre-1.0)**
 
