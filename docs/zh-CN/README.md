@@ -67,12 +67,14 @@ spec-guardian rules                        # 列出所有规则
 
 | 退出码 | 含义 |
 |--------|------|
-| `0` | 高/中危全部通过，无阻断性问题 |
-| `1` | 存在至少一条 **high** 级违规（默认让 PR 失败） |
-| `2` | 仅有 `medium` / `low` / `info`，不阻断 |
+| `0` | 没有达到阈值的违规 |
+| `1` | 存在达到或超过阈值（默认 high）的违规 |
+| `2` | 仅有低于阈值的违规，不阻断 |
 | `3` | 运行时错误（参数错误、路径不可读、严格网络失败等） |
 
-可用 `--fail-on high|medium|low|none` 调整阈值。
+可用 `--fail-on high|medium|low|none` 调整阈值。省略该参数时使用规则文件中的
+`settings.fail_on`，命令行显式值优先。`--timeout` 与 `--concurrency` 必须是整数，
+否则以用法错误退出。
 
 ## 配置 `specguard-rules.yml`
 
@@ -80,7 +82,7 @@ spec-guardian rules                        # 列出所有规则
 version: 1
 settings:
   offline: false
-  fail_on: high
+  fail_on: high            # 默认退出阈值，可被 --fail-on 覆盖
   exclude: [vendor/**, node_modules/**]
   link_check:
     enabled: true

@@ -54,7 +54,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           go build -o spec-guardian ./cmd/spec-guardian
-          ./spec-guardian scan . --offline --format all --out-dir ./self-report --no-color || true
+          ./spec-guardian scan . --offline --format all --out-dir ./self-report --no-color --fail-on high
           cat ./self-report/specguard-report.txt || true
 
       - name: Upload self report

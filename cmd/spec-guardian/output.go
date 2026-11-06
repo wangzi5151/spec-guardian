@@ -31,6 +31,14 @@ func loadConfig(root string, opts *options) (*rules.Config, error) {
 	if err != nil {
 		return nil, err
 	}
+	// A configured fail_on threshold is the default; an explicit CLI flag wins.
+	if !opts.failOnSet {
+		if cfg.Settings.FailOnNone {
+			opts.failOn = "none"
+		} else {
+			opts.failOn = string(cfg.Settings.FailOn)
+		}
+	}
 	cfg.Settings.Offline = cfg.Settings.Offline || opts.offline
 	cfg.Settings.HeaderComment = cfg.Settings.HeaderComment || opts.headerComment
 	cfg.Settings.Exclude = append(cfg.Settings.Exclude, opts.excludes...)

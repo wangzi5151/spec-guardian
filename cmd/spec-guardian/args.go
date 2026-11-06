@@ -20,6 +20,7 @@ type options struct {
 	noColor       bool
 	noLinks       bool
 	failOn        string
+	failOnSet     bool
 	excludes      []string
 	timeout       int
 	conc          int
@@ -148,6 +149,7 @@ func parseArgs(args []string) (*options, error) {
 				return nil, err
 			}
 			o.failOn = strings.ToLower(v)
+			o.failOnSet = true
 		case "--exclude":
 			v, err := val(name)
 			if err != nil {
@@ -159,13 +161,21 @@ func parseArgs(args []string) (*options, error) {
 			if err != nil {
 				return nil, err
 			}
-			o.timeout, _ = strconv.Atoi(v)
+			n, err := strconv.Atoi(v)
+			if err != nil {
+				return nil, fmt.Errorf("invalid value for %s: %q is not an integer", name, v)
+			}
+			o.timeout = n
 		case "--concurrency":
 			v, err := val(name)
 			if err != nil {
 				return nil, err
 			}
-			o.conc, _ = strconv.Atoi(v)
+			n, err := strconv.Atoi(v)
+			if err != nil {
+				return nil, fmt.Errorf("invalid value for %s: %q is not an integer", name, v)
+			}
+			o.conc = n
 		case "--fix-preview":
 			if hasValue {
 				o.fixPreview = value

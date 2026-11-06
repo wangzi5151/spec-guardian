@@ -21,6 +21,7 @@ type Config struct {
 type Settings struct {
 	Offline        bool
 	FailOn         scanner.Severity
+	FailOnNone     bool
 	Exclude        []string
 	LinkCheck      LinkCheck
 	MaxFileSizeKB  int
@@ -189,8 +190,12 @@ func (c *Config) applySettings(m map[string]any) {
 		c.Settings.Offline = asBool(v, c.Settings.Offline)
 	}
 	if v, ok := m["fail_on"]; ok {
-		if sev, ok := scanner.ParseSeverity(asString(v)); ok {
+		s := strings.ToLower(strings.TrimSpace(asString(v)))
+		if s == "none" {
+			c.Settings.FailOnNone = true
+		} else if sev, ok := scanner.ParseSeverity(s); ok {
 			c.Settings.FailOn = sev
+			c.Settings.FailOnNone = false
 		}
 	}
 	if v, ok := m["exclude"]; ok {

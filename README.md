@@ -99,12 +99,15 @@ spec-guardian export-rules --out specguard-rules.yml
 
 | Code | Meaning |
 |------|---------|
-| `0`  | No blocking findings — all high/medium checks pass |
-| `1`  | At least one **high** severity finding (fails a PR by default) |
-| `2`  | Only `medium` / `low` / `info` findings — non-blocking |
+| `0`  | No findings at or above the failure threshold |
+| `1`  | At least one finding at or above the failure threshold (default: high) |
+| `2`  | Only findings below the threshold — non-blocking |
 | `3`  | Runtime error (bad flags, unreadable path, network failure in strict mode) |
 
-The threshold is configurable with `--fail-on high|medium|low|none`.
+The threshold is configurable with `--fail-on high|medium|low|none`. When the
+flag is omitted, `settings.fail_on` from the rules file is used; an explicit
+CLI value always takes precedence. `--timeout` and `--concurrency` must be
+integer values, otherwise the command exits with a usage error.
 
 ### GitHub Action
 
@@ -150,7 +153,7 @@ version: 1
 
 settings:
   offline: false
-  fail_on: high
+  fail_on: high            # default exit threshold; --fail-on overrides it
   exclude:
     - vendor/**
     - node_modules/**
